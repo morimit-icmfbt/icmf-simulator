@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IcMF 料金シミュレーター</title>
+<style>
+/* ===== リセット・基本 ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;font-size:13px;color:#2C2C2C;background:#F7F5F0;padding:20px}
+
+/* ===== タブ ===== */
+.tab-wrap{max-width:780px;margin:0 auto}
+.tab-header{display:flex;gap:0;margin-bottom:0}
+.tab-btn{flex:1;padding:12px 8px;border:1px solid #D4C9B8;border-bottom:none;background:#EDE8DF;color:#7A6E60;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s;border-radius:8px 8px 0 0}
+.tab-btn:first-child{border-radius:8px 0 0 0}
+.tab-btn:last-child{border-radius:0 8px 0 0}
+.tab-btn.active{background:#FFFFFF;color:#2C2C2C;border-color:#C5B8A2;z-index:1}
+.tab-content{background:#FFFFFF;border:1px solid #C5B8A2;border-radius:0 0 12px 12px;padding:24px;display:none}
+.tab-content.active{display:block}
+
+/* ===== セクション ===== */
+.sim-title{font-size:17px;font-weight:600;color:#2C2C2C;margin-bottom:4px}
+.sim-lead{font-size:12px;color:#8A7E70;margin-bottom:20px;line-height:1.7}
+.step{margin-bottom:20px}
+.step-label{font-size:11px;font-weight:600;color:#8A7E70;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.step-num{width:18px;height:18px;border-radius:50%;background:#8A7E70;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+
+/* ===== ボタン群 ===== */
+.btn-group{display:flex;flex-wrap:wrap;gap:6px}
+.choice-btn{padding:8px 14px;border:1px solid #C5B8A2;border-radius:6px;background:#FDFCFA;color:#5A5048;font-size:12px;cursor:pointer;font-family:inherit;line-height:1.4;text-align:left;transition:all .15s}
+.choice-btn:hover{background:#F2EDE4;border-color:#A89880}
+.choice-btn.sel-green{background:#E8F5EE;border-color:#2D9A6B;color:#1A5E40;font-weight:600}
+.choice-btn.sel-amber{background:#FBF0E0;border-color:#C98A2A;color:#7A5010;font-weight:600}
+.choice-btn.sel-purple{background:#F0EEFF;border-color:#7B6ED6;color:#3D2E9E;font-weight:600}
+.choice-btn.sel-coral{background:#FDEEE9;border-color:#D4724A;color:#8B3018;font-weight:600}
+
+/* ===== コース選択 ===== */
+.course-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.course-btn{padding:8px 10px;border:1px solid #C5B8A2;border-radius:6px;background:#FDFCFA;color:#5A5048;font-size:12px;cursor:pointer;font-family:inherit;text-align:left;line-height:1.5;transition:all .15s}
+.course-btn:hover{background:#F2EDE4}
+.course-btn.sel-green{background:#E8F5EE;border-color:#2D9A6B;color:#1A5E40;font-weight:600}
+.course-price{font-size:11px;color:#8A7E70;font-weight:400}
+.course-btn.sel-green .course-price{color:#2D9A6B}
+
+/* ===== チェック・トグル ===== */
+.toggle-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.toggle-btn{padding:5px 12px;border:1px solid #C5B8A2;border-radius:20px;background:#FDFCFA;color:#5A5048;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.toggle-btn:hover{background:#F2EDE4}
+.toggle-btn.on{background:#FBF0E0;border-color:#C98A2A;color:#7A5010;font-weight:600}
+.disc-note{font-size:11px;color:#C98A2A;margin-top:4px;min-height:16px}
+
+/* ===== チェックボックス項目 ===== */
+.check-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid #E0D9CF;border-radius:6px;cursor:pointer;margin-bottom:5px;transition:background .1s;background:#FDFCFA}
+.check-item:hover{background:#F5F1EB}
+.check-item input[type=checkbox]{margin-top:1px;flex-shrink:0;width:14px;height:14px;accent-color:#2D9A6B}
+.check-item input[type=radio]{margin-top:1px;flex-shrink:0;width:14px;height:14px;accent-color:#7B6ED6}
+.check-body{flex:1;font-size:12px;line-height:1.5;color:#4A4240}
+.check-body strong{font-weight:600;color:#2C2C2C}
+.check-note{font-size:11px;color:#8A7E70}
+.check-amt{font-size:12px;font-weight:600;flex-shrink:0;padding-left:8px;color:#C98A2A}
+
+/* ===== セレクト ===== */
+.num-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.num-row label{font-size:12px;color:#6A6058;white-space:nowrap}
+select{font-size:12px;padding:5px 8px;border:1px solid #C5B8A2;border-radius:6px;background:#FDFCFA;color:#4A4240;font-family:inherit}
+
+/* ===== コンテンツボックス ===== */
+.content-box{padding:10px 12px;border:1px solid #E0D9CF;border-radius:6px;margin:8px 0;background:#FAF8F5}
+.content-box-title{font-size:11px;font-weight:600;color:#8A7E70;margin-bottom:6px}
+.content-list{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.content-list li{font-size:11px;color:#7A6E60;display:flex;align-items:flex-start;gap:4px;line-height:1.4}
+.content-list li::before{content:"";width:4px;height:4px;border-radius:50%;background:#7B6ED6;flex-shrink:0;margin-top:4px}
+
+/* ===== 仕切り ===== */
+.divider{border:none;border-top:1px solid #E8E2D8;margin:18px 0}
+
+/* ===== 結果ボックス ===== */
+.result-box{border-radius:8px;padding:14px 16px;margin-top:10px}
+.res-green{background:#E8F5EE;border:1px solid #8FD4B0}
+.res-amber{background:#FBF0E0;border:1px solid #E0B060}
+.res-purple{background:#F0EEFF;border:1px solid #B8AEF0}
+.res-coral{background:#FDEEE9;border:1px solid #E8A888}
+.res-label{font-size:11px;font-weight:600;color:#6A6058;margin-bottom:6px;opacity:.85}
+.res-val{font-size:22px;font-weight:700;color:#2C2C2C;line-height:1.3}
+.res-sub{font-size:11px;color:#6A6058;margin-top:4px;line-height:1.6}
+.res-items-text{font-size:12px;color:#4A4240;margin-top:8px;line-height:2;padding-top:8px;border-top:1px solid rgba(0,0,0,.08)}
+.res-note{font-size:11px;color:#8A7E70;margin-top:6px;line-height:1.6;padding-top:6px;border-top:1px solid rgba(0,0,0,.08)}
+.teal-note{background:#E8F5EE;border:1px solid #8FD4B0;border-radius:6px;padding:8px 12px;font-size:12px;color:#1A5E40;margin-top:6px}
+.empty-msg{font-size:12px;color:#8A7E70;text-align:center;padding:16px 0}
+
+/* ===== テーブル ===== */
+.price-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.price-table th{text-align:left;padding:5px 8px;background:#F0EBE2;color:#6A6058;font-weight:600}
+.price-table td{padding:5px 8px;border-bottom:1px solid #E8E2D8;color:#4A4240}
+.price-table tr:last-child td{border-bottom:none}
+.price-hl{font-weight:600;color:#2D9A6B}
+
+/* ===== ビオトーパー行 ===== */
+.bio-row{display:flex;align-items:center;padding:8px 10px;border:1px solid #C5B8A2;border-radius:6px;margin-top:6px;background:#FAF8F5}
+.bio-note{font-size:11px;color:#2D9A6B;margin-top:4px;padding-left:20px}
+
+/* ===== hidden ===== */
+.hidden{display:none!important}
+
+/* ===== レスポンシブ ===== */
+@media(max-width:500px){
+  .course-grid{grid-template-columns:1fr}
+  .content-list{grid-template-columns:1fr}
+  .tab-btn{font-size:12px;padding:10px 4px}
+}
+</style>
+</head>
+<body>
+
+<div class="tab-wrap">
+  <div class="tab-header">
+    <button class="tab-btn active" onclick="showTab('personal')">個人・月額シミュレーター</button>
+    <button class="tab-btn" onclick="showTab('group')">グループ料金シミュレーター</button>
+  </div>
+
+  <!-- ===== 個人タブ ===== -->
+  <div id="tab-personal" class="tab-content active">
+    <p class="sim-title">IcMF 料金シミュレーター</p>
+    <p class="sim-lead">あなたの参加スタイルを選ぶと、月額の目安とイベント参加料がわかります。</p>
+
+    <div class="step">
+      <div class="step-label"><span class="step-num">1</span>参加スタイルを選んでください</div>
+      <div class="btn-group">
+        <button class="choice-btn" data-tier="home" onclick="pSetTier(this)">
+          自宅レッスン生<br><span style="font-size:11px;color:#8A7E70">8,000〜11,000円/月・レッスン込み</span>
+        </button>
+        <button class="choice-btn" data-tier="bb" onclick="pSetTier(this)">
+          BigBand 本サブスク<br><span style="font-size:11px;color:#8A7E70">4,000円/月・練習室・公演含む</span>
+        </button>
+        <button class="choice-btn" data-tier="shima" onclick="pSetTier(this)">
+          島村レッスン生<br><span style="font-size:11px;color:#8A7E70">島村月謝＋登録費のみ</span>
+        </button>
+        <button class="choice-btn" data-tier="tsuido" onclick="pSetTier(this)">
+          都度会員<br><span style="font-size:11px;color:#8A7E70">2,000円/月・気が向いたとき参加</span>
+        </button>
+        <button class="choice-btn" data-tier="oen" onclick="pSetTier(this)">
+          応援サポーター<br><span style="font-size:11px;color:#8A7E70">500円/月・サイトつながり・観客応援</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 自宅生オプション -->
+    <div id="p-home-opts" class="step hidden">
+      <div class="step-label"><span class="step-num">2</span>コースを選んでください</div>
+      <div class="course-grid">
+        <button class="course-btn" data-course="kids" data-price="8000" onclick="pSetCourse(this)">
+          90分 キッズ・ウクレレ<br><span class="course-price">8,000円</span>
+        </button>
+        <button class="course-btn" data-course="junior" data-price="9000" onclick="pSetCourse(this)">
+          120分 ジュニア<br><span class="course-price">9,000円</span>
+        </button>
+        <button class="course-btn" data-course="adult" data-price="10000" onclick="pSetCourse(this)">
+          120分 大人<br><span class="course-price">10,000円</span>
+        </button>
+        <button class="course-btn" data-course="adv" data-price="11000" onclick="pSetCourse(this)">
+          120分 アドバンス<br><span class="course-price">11,000円</span>
+        </button>
+      </div>
+      <div class="step-label" style="margin-top:10px"><span class="step-num">−</span>割引（複数適用可）</div>
+      <div class="toggle-row">
+        <button class="toggle-btn" data-disc="silver" onclick="pTogDisc(this)">シルバー割 −500円</button>
+        <button class="toggle-btn" data-disc="gold" onclick="pTogDisc(this)">ゴールド割 −1,000円</button>
+        <button class="toggle-btn" data-disc="family" onclick="pTogDisc(this)">家族割 −500円</button>
+      </div>
+      <div class="disc-note" id="p-disc-note"></div>
+      <div class="bio-row">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;flex:1">
+          <input type="checkbox" id="p-bio-home" onchange="pCalc()" style="width:14px;height:14px;accent-color:#2D9A6B">
+          ビオトーパー登録サブスク <strong>+500円</strong>
+        </label>
+      </div>
+    </div>
+
+    <!-- 島村生オプション -->
+    <div id="p-shima-opts" class="step hidden">
+      <div class="step-label"><span class="step-num">2</span>ビオトーパー登録</div>
+      <div class="bio-row">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;flex:1">
+          <input type="checkbox" id="p-bio-shima" onchange="pCalc()" style="width:14px;height:14px;accent-color:#2D9A6B">
+          ビオトーパー登録サブスク <strong>+1,000円</strong><br>
+          <span style="font-size:11px;color:#8A7E70">島村月謝はこれとは別途。メンバーサイトアクセス権。</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- イベントオプション -->
+    <div id="p-ev-opts" class="step hidden">
+      <div class="step-label"><span class="step-num" id="p-ev-stepnum">3</span>参加予定のイベントをチェック（参考料金）</div>
+      <label class="check-item">
+        <input type="checkbox" id="p-onfork" onchange="pCalc()">
+        <div class="check-body"><strong>音叉来会（収録）</strong><br><span class="check-note" id="p-onfork-note">—</span></div>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="p-video" onchange="pCalc()">
+        <div class="check-body"><strong>音叉来会（動画持参）</strong><br><span class="check-note" id="p-video-note">—</span></div>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="p-concert" onchange="pCalc()">
+        <div class="check-body"><strong>BigBand 公演</strong><br><span class="check-note" id="p-concert-note">—</span></div>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="p-reh" onchange="pCalc()">
+        <div class="check-body"><strong>リハ・練習室（OFF叉来会）</strong><br><span class="check-note" id="p-reh-note">—</span></div>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 個人結果 -->
+    <div id="p-result">
+      <div class="result-box res-green" id="p-res-monthly" style="display:none">
+        <div class="res-label">月額サブスク（毎月）</div>
+        <div class="res-val" id="p-res-monthly-val">—</div>
+        <div class="res-sub" id="p-res-monthly-sub"></div>
+        <div class="res-items-text" id="p-res-includes"></div>
+      </div>
+      <div class="result-box res-amber" id="p-res-ev" style="display:none">
+        <div class="res-label">イベント参加料（開催時のみ・別途）</div>
+        <div id="p-res-ev-lines" style="font-size:13px;line-height:2.2"></div>
+      </div>
+      <p class="empty-msg" id="p-res-empty">スタイルを選ぶと料金が表示されます</p>
+    </div>
+  </div>
+
+  <!-- ===== グループタブ ===== -->
+  <div id="tab-group" class="tab-content">
+    <p class="sim-title">IcMF グループ料金シミュレーター</p>
+    <p class="sim-lead">グループで参加・依頼する際の料金目安がわかります。個人サブスクとは別途かかる費用です。</p>
+
+    <div class="step">
+      <div class="step-label"><span class="step-num">1</span>窓口担当者の区分を選んでください</div>
+      <p style="font-size:11px;color:#8A7E70;margin-bottom:8px">窓口が本サブスク会員の場合、グループ全体が優遇料金になります。</p>
+      <div class="btn-group">
+        <button class="choice-btn" data-gtier="bb" onclick="gSetTier(this)">本サブスク会員（自宅・島村・BB）</button>
+        <button class="choice-btn" data-gtier="tsuido" onclick="gSetTier(this)">都度会員</button>
+        <button class="choice-btn" data-gtier="outer" onclick="gSetTier(this)">非会員 / 窓口なし</button>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-label"><span class="step-num">2</span>イベント参加（音叉来会など）</div>
+      <div id="g-entry-table"></div>
+      <label class="check-item" style="margin-top:8px">
+        <input type="checkbox" id="g-onfork" onchange="gCalc()">
+        <div class="check-body"><strong>音叉来会（収録）</strong><br><span class="check-note" id="g-onfork-note">区分を選んでください</span></div>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="g-video" onchange="gCalc()">
+        <div class="check-body"><strong>音叉来会（動画持参）</strong><br><span class="check-note" id="g-video-note">区分を選んでください</span></div>
+      </label>
+      <div class="num-row" id="g-n-row" style="display:none">
+        <label>参加人数</label>
+        <select id="g-gr-n" onchange="gCalc()"></select>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-label"><span class="step-num">3</span>関与の種類</div>
+      <div class="btn-group" style="margin-bottom:10px">
+        <button class="choice-btn" data-kanyo="none" onclick="gSetKanyo(this)">関与なし</button>
+        <button class="choice-btn" data-kanyo="thin" onclick="gSetKanyo(this)">薄い関与</button>
+        <button class="choice-btn" data-kanyo="thick" onclick="gSetKanyo(this)">濃い関与</button>
+        <button class="choice-btn" data-kanyo="visit" onclick="gSetKanyo(this)">出張レッスン</button>
+      </div>
+      <div id="g-thin-desc" class="content-box hidden">
+        <div class="content-box-title">薄い関与の内容（スタジオ利用時90〜120分）</div>
+        <ul class="content-list">
+          <li>スタジオ使用の監督・立ち会い</li><li>進行・スケジュール調整</li><li>軽微なアドバイス</li>
+        </ul>
+      </div>
+      <div id="g-thick-desc" class="content-box hidden">
+        <div class="content-box-title">濃い関与の内容（スタジオ利用時90〜120分）</div>
+        <ul class="content-list">
+          <li>アンサンブル指導・ディレクション</li><li>練習チェック・フィードバック</li>
+          <li>楽曲アレンジ・譜面制作</li><li>パート分け・スコア作成</li>
+          <li>本番プログラム構成</li><li>スタジオ・機材リハ運営</li>
+        </ul>
+        <div class="num-row">
+          <label>グループ人数</label>
+          <select id="g-thick-n" onchange="gCalc()"></select>
+        </div>
+      </div>
+      <div id="g-visit-desc" class="content-box hidden">
+        <div class="content-box-title">出張レッスンに含まれる内容（90〜120分・1回）</div>
+        <ul class="content-list">
+          <li>アンサンブル指導・練習チェック</li><li>楽曲アレンジ・譜面・パート分け</li>
+          <li>本番に向けたプログラム構成</li><li>機材を含むリハーサル運営</li>
+        </ul>
+        <p style="font-size:11px;color:#8A7E70;margin-top:6px">重作業（大量アレンジ等）時は別途協議</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-label"><span class="step-num">4</span>講師伴奏（出演・イベント時）</div>
+      <label class="check-item">
+        <input type="radio" name="g-acc" id="g-acc-none" value="none" onchange="gCalc()" checked>
+        <div class="check-body">伴奏なし</div>
+      </label>
+      <label class="check-item">
+        <input type="radio" name="g-acc" id="g-acc-in" value="in" onchange="gCalc()">
+        <div class="check-body"><strong>スタジオ内・私発イベント</strong></div>
+        <span class="check-amt">3,000円</span>
+      </label>
+      <label class="check-item">
+        <input type="radio" name="g-acc" id="g-acc-out" value="out" onchange="gCalc()">
+        <div class="check-body"><strong>外部・外主催イベント</strong></div>
+        <span class="check-amt">5,000円</span>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- グループ結果 -->
+    <div id="g-result">
+      <div class="result-box res-amber" id="g-res-ev" style="display:none">
+        <div class="res-label">イベント参加料（開催時のみ・各自支払い）</div>
+        <div id="g-res-ev-lines" style="font-size:13px;line-height:2.2"></div>
+        <div class="res-note" id="g-res-ev-note"></div>
+      </div>
+      <div class="result-box res-purple" id="g-res-kanyo" style="display:none">
+        <div class="res-label">関与料（スタジオ利用・会員種別問わず）</div>
+        <div class="res-val" id="g-res-kanyo-val">—</div>
+        <div class="res-sub" id="g-res-kanyo-sub"></div>
+      </div>
+      <div class="result-box res-coral" id="g-res-acc" style="display:none">
+        <div class="res-label">講師伴奏料</div>
+        <div class="res-val" id="g-res-acc-val">—</div>
+      </div>
+      <p class="empty-msg" id="g-res-empty">項目を選ぶと料金が表示されます</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== タブ =====
+function showTab(id){
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
+  event.target.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ===== ユーティリティ =====
+function fmt(n){return n.toLocaleString('ja-JP')+'円';}
+function show(id){document.getElementById(id).style.display='';}
+function hide(id){document.getElementById(id).style.display='none';}
+function hid(id){document.getElementById(id).classList.add('hidden');}
+function vis(id){document.getElementById(id).classList.remove('hidden');}
+
+// ===== 個人シミュレーター =====
+var pTier=null, pCourse=null, pCoursePrice=0, pDiscs=[], pBioHome=false, pBioShima=false;
+
+var P_ONFORK={home:4000,shima:4000,bb:4000,tsuido:8000,oen:12000};
+var P_VIDEO ={home:3000,shima:3000,bb:3000,tsuido:6000,oen:9000};
+var P_CONCERT={home:0,shima:0,bb:0,tsuido:3000,oen:6000};
+var P_REH   ={home:0,shima:0,bb:0,tsuido:2000,oen:3000};
+var P_INCLUDES={
+  home:['レッスン（コース時間内）','BigBand公演・練習室・OFF叉来会','ソロ譜・発表会アレンジ（年1曲）'],
+  bb:  ['練習室（定期参加）','BigBand公演・OFF叉来会'],
+  shima:['BigBand公演・練習室','ビオトーパー登録でOFF叉来会参加可'],
+  tsuido:['参加の都度お支払い'],
+  oen:  ['メンバーサイト閲覧','公演の観客として応援'],
+};
+
+function pSetTier(btn){
+  document.querySelectorAll('[data-tier]').forEach(function(b){b.classList.remove('sel-green');});
+  btn.classList.add('sel-green');
+  pTier=btn.dataset.tier;
+  pCourse=null;pCoursePrice=0;pDiscs=[];
+  document.querySelectorAll('.course-btn').forEach(function(b){b.classList.remove('sel-green');});
+  document.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('p-disc-note').textContent='';
+  document.getElementById('p-bio-home').checked=false;
+  document.getElementById('p-bio-shima').checked=false;
+  ['p-home-opts','p-shima-opts','p-ev-opts'].forEach(hid);
+  if(pTier==='home'){vis('p-home-opts');}
+  else if(pTier==='shima'){vis('p-shima-opts');vis('p-ev-opts');document.getElementById('p-ev-stepnum').textContent='3';}
+  else{vis('p-ev-opts');document.getElementById('p-ev-stepnum').textContent='2';}
+  pUpdateNotes();pCalc();
+}
+function pSetCourse(btn){
+  document.querySelectorAll('.course-btn').forEach(function(b){b.classList.remove('sel-green');});
+  btn.classList.add('sel-green');
+  pCourse=btn.dataset.course;pCoursePrice=parseInt(btn.dataset.price);
+  vis('p-ev-opts');document.getElementById('p-ev-stepnum').textContent='3';
+  pCalc();
+}
+function pTogDisc(btn){
+  var d=btn.dataset.disc;
+  var idx=pDiscs.indexOf(d);
+  if(idx>=0){pDiscs.splice(idx,1);btn.classList.remove('on');}
+  else{pDiscs.push(d);btn.classList.add('on');}
+  var total=(pDiscs.indexOf('silver')>=0?500:0)+(pDiscs.indexOf('gold')>=0?1000:0)+(pDiscs.indexOf('family')>=0?500:0);
+  var el=document.getElementById('p-disc-note');
+  el.textContent=total>0?'割引合計 −'+fmt(total):'';
+  pCalc();
+}
+function pUpdateNotes(){
+  if(!pTier)return;
+  document.getElementById('p-onfork-note').textContent=P_ONFORK[pTier]===0?'含む（サブスク内）':fmt(P_ONFORK[pTier]);
+  document.getElementById('p-video-note').textContent=P_VIDEO[pTier]===0?'含む（サブスク内）':fmt(P_VIDEO[pTier]);
+  document.getElementById('p-concert-note').textContent=P_CONCERT[pTier]===0?'含む（サブスク内）':fmt(P_CONCERT[pTier]);
+  document.getElementById('p-reh-note').textContent=P_REH[pTier]===0?'含む（サブスク内）':fmt(P_REH[pTier]);
+}
+function pCalc(){
+  pUpdateNotes();
+  if(!pTier){hide('p-res-monthly');hide('p-res-ev');show('p-res-empty');return;}
+  if(pTier==='home'&&!pCourse){hide('p-res-monthly');hide('p-res-ev');show('p-res-empty');return;}
+  show('p-res-monthly');hide('p-res-empty');
+
+  var monthly=0,subItems=[];
+  if(pTier==='home'){
+    monthly=pCoursePrice;
+    subItems.push('月謝 '+fmt(pCoursePrice));
+    if(pDiscs.indexOf('silver')>=0){monthly-=500;subItems.push('シルバー割 −500円');}
+    if(pDiscs.indexOf('gold')>=0){monthly-=1000;subItems.push('ゴールド割 −1,000円');}
+    if(pDiscs.indexOf('family')>=0){monthly-=500;subItems.push('家族割 −500円');}
+    if(document.getElementById('p-bio-home').checked){monthly+=500;subItems.push('ビオトーパー登録 +500円');}
+  } else if(pTier==='bb'){
+    monthly=4000;subItems.push('本サブスク 4,000円');
+  } else if(pTier==='shima'){
+    monthly=0;
+    if(document.getElementById('p-bio-shima').checked){monthly+=1000;subItems.push('ビオトーパー登録 +1,000円');}
+    else{subItems.push('島村月謝のみ（別途）');}
+  } else if(pTier==='tsuido'){
+    monthly=2000;subItems.push('都度会員費 2,000円');
+  } else if(pTier==='oen'){
+    monthly=500;subItems.push('応援サポーター 500円');
+  }
+
+  var mEl=document.getElementById('p-res-monthly');
+  mEl.style.display='';
+  document.getElementById('p-res-monthly-val').textContent=(pTier==='shima'&&monthly===0)?'島村月謝のみ（別途）':fmt(monthly);
+  document.getElementById('p-res-monthly-sub').textContent=subItems.join('　');
+  var incl=P_INCLUDES[pTier]||[];
+  document.getElementById('p-res-includes').innerHTML=incl.map(function(s){return '✓ '+s;}).join('<br>');
+
+  var onfork=document.getElementById('p-onfork').checked;
+  var video=document.getElementById('p-video').checked;
+  var concert=document.getElementById('p-concert').checked;
+  var reh=document.getElementById('p-reh').checked;
+  var evLines='';
+  if(onfork&&P_ONFORK[pTier]>0)evLines+='音叉来会（収録）：'+fmt(P_ONFORK[pTier])+'<br>';
+  if(onfork&&P_ONFORK[pTier]===0)evLines+='音叉来会（収録）：含む（サブスク内）<br>';
+  if(video&&P_VIDEO[pTier]>0)evLines+='音叉来会（動画持参）：'+fmt(P_VIDEO[pTier])+'<br>';
+  if(video&&P_VIDEO[pTier]===0)evLines+='音叉来会（動画持参）：含む（サブスク内）<br>';
+  if(concert&&P_CONCERT[pTier]>0)evLines+='BigBand公演：'+fmt(P_CONCERT[pTier])+'<br>';
+  if(concert&&P_CONCERT[pTier]===0)evLines+='BigBand公演：含む（サブスク内）<br>';
+  if(reh&&P_REH[pTier]>0)evLines+='リハ・練習室（OFF叉来会）：'+fmt(P_REH[pTier])+'<br>';
+  if(reh&&P_REH[pTier]===0)evLines+='リハ・練習室（OFF叉来会）：含む（サブスク内）<br>';
+  if(evLines){show('p-res-ev');document.getElementById('p-res-ev-lines').innerHTML=evLines;}
+  else{hide('p-res-ev');}
+}
+
+// ===== グループシミュレーター =====
+var gTier=null, gKanyo='none';
+var G_ENTRY={bb:{s:4000,m:3000},tsuido:{s:8000,m:6000},outer:{s:12000,m:9000}};
+var G_ONFORK={bb:4000,tsuido:8000,outer:12000};
+var G_VIDEO={bb:3000,tsuido:6000,outer:9000};
+
+// セレクト生成
+(function(){
+  var grN=document.getElementById('g-gr-n');
+  for(var i=2;i<=10;i++){var o=document.createElement('option');o.value=i;o.textContent=i+'名';grN.appendChild(o);}
+  var thN=document.getElementById('g-thick-n');
+  [[3,'3名 — 15,000円'],[4,'4名 — 15,000円'],[5,'5名 — 15,000円'],
+   [6,'6名 — 20,000円'],[7,'7名 — 20,000円'],[8,'8名以上 — 20,000円']].forEach(function(p){
+    var o=document.createElement('option');o.value=p[0];o.textContent=p[1];thN.appendChild(o);
+  });
+})();
+
+function gSetTier(btn){
+  document.querySelectorAll('[data-gtier]').forEach(function(b){b.classList.remove('sel-green');});
+  btn.classList.add('sel-green');
+  gTier=btn.dataset.gtier;
+  gUpdateTable();gUpdateNotes();gCalc();
+}
+function gUpdateTable(){
+  var wrap=document.getElementById('g-entry-table');
+  if(!gTier){wrap.innerHTML='';return;}
+  var e=G_ENTRY[gTier];
+  wrap.innerHTML='<table class="price-table"><thead><tr><th>人数</th><th>音叉来会（収録）/人</th><th>音叉来会（動画持参）/人</th></tr></thead>'
+    +'<tbody>'
+    +'<tr><td>1〜3名</td><td class="price-hl">'+fmt(G_ONFORK[gTier])+'</td><td class="price-hl">'+fmt(G_VIDEO[gTier])+'</td></tr>'
+    +'<tr><td>4名以上</td><td class="price-hl">'+fmt(e.m)+'</td><td class="price-hl">'+fmt(gTier==='bb'?3000:gTier==='tsuido'?6000:9000)+'</td></tr>'
+    +'</tbody></table>';
+}
+function gUpdateNotes(){
+  if(!gTier)return;
+  var n=parseInt(document.getElementById('g-gr-n').value)||2;
+  var e=G_ENTRY[gTier];
+  var of_u=n<=3?G_ONFORK[gTier]:e.m;
+  var vi_u=n<=3?G_VIDEO[gTier]:(gTier==='bb'?3000:gTier==='tsuido'?6000:9000);
+  document.getElementById('g-onfork-note').textContent='1人あたり '+fmt(of_u)+'（'+n+'名・4名以上は割引単価）';
+  document.getElementById('g-video-note').textContent='1人あたり '+fmt(vi_u)+'（'+n+'名・4名以上は割引単価）';
+}
+function gSetKanyo(btn){
+  document.querySelectorAll('[data-kanyo]').forEach(function(b){b.classList.remove('sel-purple');});
+  btn.classList.add('sel-purple');
+  gKanyo=btn.dataset.kanyo;
+  ['g-thin-desc','g-thick-desc','g-visit-desc'].forEach(hid);
+  if(gKanyo==='thin')vis('g-thin-desc');
+  if(gKanyo==='thick')vis('g-thick-desc');
+  if(gKanyo==='visit')vis('g-visit-desc');
+  gCalc();
+}
+function gCalc(){
+  gUpdateNotes();
+  var hasAny=false;
+  var n=parseInt(document.getElementById('g-gr-n').value)||2;
+  var thN=parseInt(document.getElementById('g-thick-n').value)||3;
+  var onfork=document.getElementById('g-onfork').checked;
+  var video=document.getElementById('g-video').checked;
+  document.getElementById('g-n-row').style.display=(onfork||video)?'flex':'none';
+
+  // イベント
+  var eb=document.getElementById('g-res-ev');
+  if(gTier&&(onfork||video)){
+    eb.style.display='';hasAny=true;
+    var e=G_ENTRY[gTier];
+    var of_u=n<=3?G_ONFORK[gTier]:e.m;
+    var vi_u=n<=3?G_VIDEO[gTier]:(gTier==='bb'?3000:gTier==='tsuido'?6000:9000);
+    var lines='';
+    if(onfork)lines+='音叉来会（収録）：<strong>'+fmt(of_u)+'</strong>/人 × '+n+'名 ＝ <strong>'+fmt(of_u*n)+'</strong><br>';
+    if(video)lines+='音叉来会（動画持参）：<strong>'+fmt(vi_u)+'</strong>/人 × '+n+'名 ＝ <strong>'+fmt(vi_u*n)+'</strong><br>';
+    document.getElementById('g-res-ev-lines').innerHTML=lines;
+    var noteStr=(n>=4?'4名以上の割引単価を適用':'3名以下の単価を適用');
+    var tierNote=gTier==='bb'?'（本サブスク会員）':gTier==='tsuido'?'（都度会員）':'（非会員）';
+    document.getElementById('g-res-ev-note').textContent=noteStr+tierNote;
+  } else {eb.style.display='none';}
+
+  // 関与料
+  var kb=document.getElementById('g-res-kanyo');
+  if(gKanyo==='thin'){
+    kb.style.display='';hasAny=true;
+    document.getElementById('g-res-kanyo-val').textContent='10,000円';
+    document.getElementById('g-res-kanyo-sub').textContent='薄い関与・スタジオ利用時90〜120分・人数問わず';
+  } else if(gKanyo==='thick'){
+    kb.style.display='';hasAny=true;
+    var amt=thN<=5?15000:20000;
+    document.getElementById('g-res-kanyo-val').textContent=fmt(amt);
+    document.getElementById('g-res-kanyo-sub').textContent='濃い関与・スタジオ利用時90〜120分・'+thN+'名';
+  } else if(gKanyo==='visit'){
+    kb.style.display='';hasAny=true;
+    document.getElementById('g-res-kanyo-val').textContent='20,000円';
+    document.getElementById('g-res-kanyo-sub').textContent='出張レッスン・90〜120分・アレンジ等込み（重作業時は別途協議）';
+  } else {kb.style.display='none';}
+
+  // 伴奏
+  var ab=document.getElementById('g-res-acc');
+  var accVal=document.querySelector('input[name="g-acc"]:checked').value;
+  if(accVal==='in'){ab.style.display='';hasAny=true;document.getElementById('g-res-acc-val').textContent='3,000円（スタジオ内・私発）';}
+  else if(accVal==='out'){ab.style.display='';hasAny=true;document.getElementById('g-res-acc-val').textContent='5,000円（外部・外主催）';}
+  else{ab.style.display='none';}
+
+  document.getElementById('g-res-empty').style.display=hasAny?'none':'';
+}
+</script>
+</body>
+</html>
