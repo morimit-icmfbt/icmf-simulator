@@ -191,37 +191,17 @@ body{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans
       <div id="g-thick-desc" class="content-box hidden">
         <div class="content-box-title">濃い関与の内容（スタジオ利用時90〜120分）</div>
         <ul class="content-list"><li>アンサンブル指導・ディレクション</li><li>練習チェック・フィードバック</li><li>楽曲アレンジ・譜面制作</li><li>パート分け・スコア作成</li><li>本番プログラム構成</li><li>スタジオ・機材リハ運営</li></ul>
-        <div class="n-label" style="margin-top:10px">割引（シルバー・ゴールドは択一）</div>
-        <div class="toggle-row" style="margin-top:6px">
-          <button class="toggle-btn" data-gdisc="silver" onclick="gTogDisc(this)">シルバー割 −500円</button>
-          <button class="toggle-btn" data-gdisc="gold" onclick="gTogDisc(this)">ゴールド割 −1,000円</button>
+        <div class="n-label" style="margin-top:10px">グループ人数（2名：10,000円 / 3名以上：15,000円）</div>
+        <div class="n-btn-row" id="g-thick-n-btns"></div>
+        <div id="g-thick-preview" style="display:none;margin-top:8px;padding:10px 12px;background:#E8F5EE;border:1px solid #8FD4B0;border-radius:6px">
+          <div style="font-size:11px;color:#2D9A6B;margin-bottom:2px">合計 <span id="g-thick-total-amt">—</span> → 1人あたり</div>
+          <div style="font-size:20px;font-weight:700;color:#1A5E40" id="g-thick-per-amt">—</div>
         </div>
-        <div class="disc-note" id="g-disc-note"></div>
       </div>
       <div id="g-visit-desc" class="content-box hidden">
         <div class="content-box-title">出張レッスンに含まれる内容（90〜120分・1回）</div>
         <ul class="content-list"><li>アンサンブル指導・練習チェック</li><li>楽曲アレンジ・譜面・パート分け</li><li>本番に向けたプログラム構成</li><li>機材を含むリハーサル運営</li></ul>
         <p style="font-size:11px;color:#8A7E70;margin-top:6px">重作業（大量アレンジ等）時は別途協議</p>
-      </div>
-    </div>
-
-    <!-- 2.5: グループレッスン -->
-    <div class="step">
-      <div class="step-label"><span class="step-num">＋</span>グループレッスン（スタジオ内）</div>
-      <div class="btn-group" style="margin-bottom:10px">
-        <button class="choice-btn" data-glesson="none" onclick="gSetLesson(this)">なし</button>
-        <button class="choice-btn" data-glesson="friends" onclick="gSetLesson(this)">友達同士レッスン</button>
-        <button class="choice-btn" data-glesson="ensemble" onclick="gSetLesson(this)">共演レッスン</button>
-      </div>
-      <div id="g-friends-desc" class="content-box hidden">
-        <div class="content-box-title">友達同士レッスン</div>
-        <p style="font-size:11px;color:#7A6E60;margin-bottom:6px">各自が個人レッスン料をそれぞれ支払います。家族割（−500円）適用可。</p>
-      </div>
-      <div id="g-ensemble-desc" class="content-box hidden">
-        <div class="content-box-title">共演レッスン（2名〜・5,000円/人）</div>
-        <p style="font-size:11px;color:#7A6E60;margin-bottom:6px">2人で一曲を仕上げるアンサンブルレッスン。指導・合わせ・アレンジ込み。</p>
-        <div class="n-label">参加人数</div>
-        <div class="n-btn-row" id="g-ensemble-n-btns"></div>
       </div>
     </div>
 
@@ -275,11 +255,6 @@ body{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans
       <div class="res-label">イベント参加料（開催時のみ・各自支払い）</div>
       <div id="g-res-ev-lines" style="font-size:13px;line-height:2.2"></div>
       <div class="res-note" id="g-res-ev-note"></div>
-    </div>
-    <div class="result-box res-green" id="g-res-glesson" style="display:none">
-      <div class="res-label">グループレッスン料</div>
-      <div class="res-val" id="g-res-glesson-val">—</div>
-      <div class="res-sub" id="g-res-glesson-sub"></div>
     </div>
     <div class="result-box res-purple" id="g-res-kanyo" style="display:none">
       <div class="res-label">関与料（スタジオ利用・会員種別問わず）</div>
@@ -433,13 +408,14 @@ function pCalc(){
 }
 
 // ===== グループ =====
-var gTier=null,gKanyo='none',gGrN=2,gKessenN=2;
+var gTier=null,gKanyo='none',gGrN=2,gThickN=2,gKessenN=2;
 var G_ENTRY={bb:{s:4000,m:3000},tsuido:{s:8000,m:6000},outer:{s:12000,m:9000}};
 var G_ONFORK={bb:4000,tsuido:8000,outer:12000};
 var G_VIDEO={bb:3000,tsuido:6000,outer:9000};
 
 // 人数ボタン初期化
 makeNBtns('g-gr-n-btns',[2,3,4,5,6,7,8,9,10],'sel-green',function(n){gGrN=n;gCalc();});
+makeNBtns('g-thick-n-btns',[2,3,4,5,6,7,8],'sel-purple',function(n){gThickN=n;gCalc();});
 makeNBtns('g-kessen-n-btns',[2,3,4,5,6,7,8,9,10],'sel-green',function(n){gKessenN=n;gCalc();});
 
 function gSetTier(btn){
@@ -464,30 +440,9 @@ function gUpdateNotes(){
   document.getElementById('g-onfork-note').textContent='1人あたり '+fmt(of_u)+'（'+gGrN+'名・4名以上は割引単価）';
   document.getElementById('g-video-note').textContent='1人あたり '+fmt(vi_u)+'（'+gGrN+'名・4名以上は割引単価）';
 }
-var gDisc=null; // 'silver' or 'gold' or null
-function gTogDisc(btn){
-  var d=btn.dataset.gdisc;
-  if(gDisc===d){
-    // 同じボタンをもう一度→OFF
-    gDisc=null;
-    btn.classList.remove('on');
-  } else {
-    // 切り替え（排他）
-    document.querySelectorAll('[data-gdisc]').forEach(function(b){b.classList.remove('on');});
-    gDisc=d;
-    btn.classList.add('on');
-  }
-  var total=gDisc==='silver'?500:gDisc==='gold'?1000:0;
-  document.getElementById('g-disc-note').textContent=total>0?'割引 −'+fmt(total):'';
-  gCalc();
-}
 function gSetKanyo(btn){
   document.querySelectorAll('[data-kanyo]').forEach(function(b){b.classList.remove('sel-purple');});
   btn.classList.add('sel-purple');gKanyo=btn.dataset.kanyo;
-  // 関与が変わったら割引リセット
-  gDisc=null;
-  document.querySelectorAll('[data-gdisc]').forEach(function(b){b.classList.remove('on');});
-  if(document.getElementById('g-disc-note'))document.getElementById('g-disc-note').textContent='';
   ['g-thin-desc','g-thick-desc','g-visit-desc'].forEach(hid);
   if(gKanyo==='thin')vis('g-thin-desc');
   if(gKanyo==='thick')vis('g-thick-desc');
@@ -551,12 +506,17 @@ function gCalc(){
     document.getElementById('g-res-kanyo-sub').textContent='薄い関与・スタジオ利用時90〜120分・人数問わず';
   }else if(gKanyo==='thick'){
     kb.style.display='';hasAny=true;
-    var thickAmt=15000;
-    if(gDisc==='silver')thickAmt-=500;
-    if(gDisc==='gold')thickAmt-=1000;
-    var discStr=gDisc==='silver'?' （シルバー割 −500円）':gDisc==='gold'?' （ゴールド割 −1,000円）':'';
-    document.getElementById('g-res-kanyo-val').textContent=fmt(thickAmt);
-    document.getElementById('g-res-kanyo-sub').textContent='濃い関与・スタジオ利用時90〜120分・人数問わず'+discStr;
+    var thickBase=gThickN>=3?15000:10000;
+    var thickPer=gThickN?Math.ceil(thickBase/gThickN):null;
+    var thickNLabel=gThickN>=3?'3名以上料金':'2名料金';
+    document.getElementById('g-res-kanyo-val').textContent=fmt(thickBase)+(thickPer?' → 1人あたり '+fmt(thickPer):'');
+    document.getElementById('g-res-kanyo-sub').textContent='濃い関与・スタジオ利用時90〜120分'+(gThickN?'・'+gThickN+'名（'+thickNLabel+'）':'');
+    var prev=document.getElementById('g-thick-preview');
+    if(prev&&gThickN){
+      prev.style.display='block';
+      document.getElementById('g-thick-total-amt').textContent=fmt(thickBase);
+      document.getElementById('g-thick-per-amt').textContent=fmt(thickPer);
+    }else if(prev){prev.style.display='none';}
   }else if(gKanyo==='visit'){
     kb.style.display='';hasAny=true;
     document.getElementById('g-res-kanyo-val').textContent='20,000円';
