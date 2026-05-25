@@ -137,6 +137,15 @@ body{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans
           <span style="font-size:11px;color:#8A7E70">島村月謝はこれとは別途。メンバーサイトアクセス権。</span>
         </label>
       </div>
+      <div id="p-shima-start-row" style="display:none;margin-top:6px">
+        <div class="bio-row">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;flex:1">
+            <input type="checkbox" id="p-start-shima" onchange="pCalc()" style="width:16px;height:16px;accent-color:#C98A2A">
+            スタート割（新規登録割引） <strong>−500円</strong>
+            <span style="font-size:11px;color:#8A7E70">登録1年目のみ適用・2年目から通常料金</span>
+          </label>
+        </div>
+      </div>
     </div>
     <div id="p-ev-opts" class="step hidden">
       <div class="step-label"><span class="step-num" id="p-ev-stepnum">3</span>参加予定のイベントをチェック（参考料金）</div>
@@ -386,8 +395,16 @@ function pCalc(){
     if(document.getElementById('p-bio-home').checked){monthly+=500;subItems.push('ビオトーパー登録 +500円');}
   }else if(pTier==='bb'){monthly=4000;subItems.push('本サブスク 4,000円');
   }else if(pTier==='shima'){monthly=0;
-    if(document.getElementById('p-bio-shima').checked){monthly+=1000;subItems.push('ビオトーパー登録 +1,000円');}
-    else{subItems.push('島村月謝のみ（別途）');}
+    var bioShima=document.getElementById('p-bio-shima').checked;
+    var startShima=document.getElementById('p-start-shima').checked;
+    document.getElementById('p-shima-start-row').style.display=bioShima?'block':'none';
+    if(bioShima){
+      monthly+=1000;subItems.push('ビオトーパー登録 +1,000円');
+      if(startShima){monthly-=500;subItems.push('スタート割（新規登録割引） −500円');}
+    }else{
+      subItems.push('島村月謝のみ（別途）');
+      document.getElementById('p-start-shima').checked=false;
+    }
   }else if(pTier==='tsuido'){monthly=2000;subItems.push('都度会員費 2,000円');
   }else if(pTier==='oen'){monthly=500;subItems.push('応援サポーター 500円');}
   document.getElementById('p-res-monthly').style.display='';
